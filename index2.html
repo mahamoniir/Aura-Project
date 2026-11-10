@@ -414,7 +414,9 @@ addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&/^[zy]$/i.test(e.key)&
 // saved
 let SV=[];try{SV=JSON.parse(localStorage.getItem('aura-sc')||'[]')}catch(e){}
 function uiSv(){const p=$('sv');p.innerHTML='';lockUI(p);const n=document.createElement('input');n.type='text';n.placeholder='اسم السين';p.append(n);bt(p,'💾 حفظ',()=>{SV.push({n:n.value||'سين '+(SV.length+1),s:state()});try{localStorage.setItem('aura-sc',JSON.stringify(SV))}catch(e){}uiSv()},'p');
-SV.forEach((v,j)=>{const r=document.createElement('div');r.className='rw';r.append(v.n);bt(r,'تحميل',()=>loadSc(v.s));bt(r,'حذف',()=>{SV.splice(j,1);try{localStorage.setItem('aura-sc',JSON.stringify(SV))}catch(e){}uiSv()});p.append(r)})}
+SV.forEach((v,j)=>{const r=document.createElement('div');r.className='rw';r.append(v.n);bt(r,'تحميل',()=>loadSc(v.s));bt(r,'حذف',()=>{SV.splice(j,1);try{localStorage.setItem('aura-sc',JSON.stringify(SV))}catch(e){}uiSv()});p.append(r)});
+{const x=document.createElement('div');x.className='rw mt';bt(x,'📤 تصدير كل المشاهد',()=>{$('js').value=JSON.stringify(SV)});bt(x,'📥 استيراد مشاهد',()=>{try{const a=JSON.parse($('js').value);if(!Array.isArray(a)||!a.every(v=>v&&v.n&&v.s))throw 0;a.forEach(v=>SV.push({n:v.n,s:v.s}));svStore();uiSv()}catch(e){alert('الصق JSON المشاهد (من زر التصدير) في خانة JSON تحت الأول')}});p.append(x);const m=document.createElement('div');m.className='mu';m.textContent='التصدير/الاستيراد بيستخدم خانة JSON اللي تحت (لنقل المشاهد لجهاز تاني زي الـ Quest).';p.append(m)}
+try{drawP()}catch(e){}}
 $('ex').onclick=()=>$('js').value=JSON.stringify(state());
 $('im').onclick=()=>{try{load(JSON.parse($('js').value))}catch(e){alert('JSON غير صالح')}};
 function ui(){uiAdd();uiBulk();uiLand();uiIes();uiSel();uiLs();uiMt();uiLed();uiEnv();uiPre();uiSv()}
@@ -424,14 +426,17 @@ function sync(){SIGNS.forEach(m=>{m.emissive.copy(M.sign.emissive);m.emissiveInt
 // ===== VR =====
 R.xr.enabled=true;const rig=new THREE.Group();rig.add(C);S.add(rig);
 const PW=1024,PH=768,PC=document.createElement('canvas');PC.width=PW;PC.height=PH;const PT=new THREE.CanvasTexture(PC),PM=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1.2),new THREE.MeshBasicMaterial({map:PT,side:THREE.DoubleSide,toneMapped:false}));PM.visible=false;rig.add(PM);let PB=[];
+let SVP=0,SVCF=null,SVCUR=null;
+function svStore(){try{localStorage.setItem('aura-sc',JSON.stringify(SV))}catch(e){}}
+function svAdd(){let k=SV.length+1;while(SV.some(v=>v.n==='سين '+k))k++;const v={n:'سين '+k,s:state()};SV.push(v);SVCUR=v;SVCF=null;SVP=Math.floor((SV.length-1)/6);svStore();uiSv()}
 let VP=0,VT='updown',VF='front',VL='both',VN=4,VMK='stone',VIES='',SLD=null,VG=null,VLK=2700;
-const TABS=['المشاهد','التحكم','إضافة','لاندسكيب/LED','الخامات','IES'],SWC=['#151515','#f2f2f2','#8a8a8a','#5a2f1e','#a5a39e','#c9b79c','#2b3a55','#355f27','#eb1b26','#ffc98a'];
+const TABS=['المشاهد','التحكم','إضافة','لاندسكيب/LED','الخامات','IES','المحفوظة'],SWC=['#151515','#f2f2f2','#8a8a8a','#5a2f1e','#a5a39e','#c9b79c','#2b3a55','#355f27','#eb1b26','#ffc98a'];
 function drawP(){const g=PC.getContext('2d'),FN='"IBM Plex Sans Arabic",Tahoma,sans-serif';g.fillStyle='#0f0f11';g.fillRect(0,0,PW,PH);g.direction='rtl';g.textAlign='center';g.textBaseline='middle';PB=[];
 const tx=(t,x,y,fs,c)=>{g.fillStyle=c||'#ccc';g.font='500 '+(fs||18)+'px '+FN;g.fillText(t,x,y)};
 const b=(x,y,w,h,t,fn,on,fs)=>{g.fillStyle=on?'#eb1b26':'#26262b';g.fillRect(x,y,w,h);tx(t,x+w/2,y+h/2,fs||18,'#fff');PB.push({x,y,w,h,fn})};
 const row=(y,it,h)=>{const w=(PW-24)/it.length;it.forEach((q,i)=>b(12+i*w,y,w-6,h||48,q[0],q[1],q[2],q[3]))};
 const sld=(y,l,get,set,mn,mx,d)=>{const x=24,w=976,v=+get(),q=Math.max(0,Math.min(1,(v-mn)/(mx-mn)));tx(l+':  '+v.toFixed(d||0),PW/2,y+10,18);g.fillStyle='#3a3a40';g.fillRect(x,y+26,w,12);g.fillStyle='#eb1b26';g.fillRect(x,y+26,w*q,12);g.fillStyle='#fff';g.fillRect(x+w*q-7,y+20,14,24);PB.push({x,y:y+12,w,h:40,s:{set,mn,mx,x,w}})};
-TABS.forEach((t,i)=>b(6+i*169,6,165,46,t,()=>{if(VP!=i&&window.VOX)VOX.vrTab(i);VP=i},VP==i,17));
+TABS.forEach((t,i)=>{const tw=(PW-12)/TABS.length;b(6+i*tw,6,tw-4,46,t,()=>{if(VP!=i&&window.VOX)VOX.vrTab(i);VP=i;SVCF=null},VP==i,15)});
 const g0=tg()[0]||{},ap=fn=>v=>{tg().forEach(f=>{fn(f,v);apply(f)})},tgl=scopeLbl().replace('الهدف: ','');
 if(VP==0){Object.keys(PRE).forEach((n,i)=>b(12+(i%2)*500,64+(i>>1)*58,490,52,n,()=>preset(n),n==SCN,16));row(430,[['غروب',()=>sky('dusk'),SKY=='dusk'],['ليل',()=>sky('night'),SKY=='night'],['نهار',()=>sky('day'),SKY=='day']]);tx('السين الحالي: '+(SCN||'-'),PW/2,510,20,'#fff');row(540,[['🔒 تثبيت البيئة: '+(ENVLOCK?'مفعّل':'مطفأ'),()=>{ENVLOCK=ENVLOCK?0:1;uiPre();uiSv()},ENVLOCK]],46)}
 if(VP==1){row(58,[['🔦 المحدد',()=>setScope('sel'),SC=='sel'],['🧩 كل نوع',()=>setScope('type'),SC=='type'],['🌐 الكل',()=>setScope('all'),SC=='all'],['🌿 اللاندسكيب',()=>setScope('land'),SC=='land']],42);
@@ -459,6 +464,15 @@ row(548,[['↺ التكستشر الأصلي',()=>applyTex(VMK,0)],...Object.key
 if(VP==5){const ks=Object.keys(IESLIB);if(!ks.length)tx('مفيش ملفات IES. ارفعيها من النسخة العادية (قسم IES) وهتظهر هنا',PW/2,120,19);else{if(!ks.includes(VIES))VIES=ks[0];ks.slice(0,8).forEach((k,i)=>b(12+(i%2)*500,64+(i>>1)*52,490,46,k,()=>{VIES=k},VIES==k,15));const d=IESLIB[VIES],t2=document.createElement('canvas');t2.width=240;t2.height=170;plotIES(t2,d);g.drawImage(t2,12,290,420,300);
 tx('Peak '+Math.round(d.pk)+' cd',720,330,20,'#fff');tx('Beam '+(d.t50*2).toFixed(0)+'° · Field '+(d.t10*2).toFixed(0)+'°',720,370,19);tx('← زاوية '+d.a+'° · نعومة '+d.p,720,410,19);tx('الهدف: '+tgl,720,460,18);
 b(500,490,440,50,'تطبيق على الهدف',()=>{tg().forEach(f=>applyIES(f,d));uiSel()});b(500,550,440,50,'إزالة IES',()=>{tg().forEach(f=>{f.ies=''});uiSel()})}}
+if(VP==6){const PER=6,np=Math.max(1,Math.ceil(SV.length/PER));if(SVP>=np)SVP=np-1;if(SVP<0)SVP=0;
+tx('المشاهد المحفوظة ('+SV.length+')',PW/2,80,22,'#fff');
+row(100,[['💾 حفظ المشهد الحالي',()=>svAdd(),0,17],['🔒 تثبيت البيئة: '+(ENVLOCK?'مفعّل':'مطفأ'),()=>{ENVLOCK=ENVLOCK?0:1;uiPre();uiSv()},ENVLOCK,15]],48);
+if(!SV.length)tx('مفيش مشاهد محفوظة لسه. اضبطي السين واضغطي «حفظ المشهد الحالي»',PW/2,300,19);
+SV.slice(SVP*PER,SVP*PER+PER).forEach((v,i)=>{const j=SVP*PER+i,y=162+i*72,nm=v.n.length>26?v.n.slice(0,25)+'…':v.n,cu=SVCF&&SVCF.v===v&&SVCF.t=='up',cd=SVCF&&SVCF.v===v&&SVCF.t=='del';
+b(12,y,540,62,(SVCUR===v?'● ':'')+nm,()=>{loadSc(v.s);SVCUR=v;SVCF=null},SVCUR===v,18);
+b(558,y,236,62,cu?'⚠ تأكيد التحديث':'↻ تحديث بالحالي',()=>{if(cu){v.s=state();SVCUR=v;SVCF=null;svStore();uiSv()}else SVCF={v,t:'up'}},cu,15);
+b(800,y,212,62,cd?'⚠ تأكيد الحذف':'🗑 حذف',()=>{if(cd){const k=SV.indexOf(v);if(k>=0)SV.splice(k,1);if(SVCUR===v)SVCUR=null;SVCF=null;svStore();uiSv()}else SVCF={v,t:'del'}},cd,15)});
+if(np>1)row(602,[['‹ السابق',()=>{SVP=(SVP+np-1)%np;SVCF=null},0,16],['صفحة '+(SVP+1)+' / '+np,()=>{},0,16],['التالي ›',()=>{SVP=(SVP+1)%np;SVCF=null},0,16]],44)}
 if(VMSG)tx(VMSG,PW/2,672,18,'#ffb4b8');else if(window.VOX&&VOX.hint())tx(VOX.hint(),PW/2,672,18,'#9fe0a8');tx('Grip على اللوحة = امسكيها وحرّكيها · العصا ↕ تقريب/تبعيد · ↔ تكبير/تصغير',PW/2,696,14,'#999');row(712,[['↶ تراجع',undo,0,14],['↷ إعادة',redo,0,14],['⟲ السين للأصل',resetSc,0,14],['إلغاء التحديد',()=>select(null),0,14],['✥ حرّك اللوحة',()=>startPG(VRC,'trig'),PG&&PG.t=='trig',14],['📍 قدامي',bringPanel,0,14],[window.VOX&&VOX.muted?'🔊 فك الكتم':'🔇 كتم الصوت',()=>VOX.toggleMute(),window.VOX&&VOX.muted,14],['🎧 المقدمة',()=>VOX.vrIntro(),0,14]],48);PT.needsUpdate=true}
 function vrRay(c){const m=new THREE.Matrix4().extractRotation(c.matrixWorld);rc.ray.origin.setFromMatrixPosition(c.matrixWorld);rc.ray.direction.set(0,0,-1).applyMatrix4(m);return rc}
 function panelHit(){const h=rc.intersectObject(PM)[0];return h&&h.uv?[h.uv.x*PW,(1-h.uv.y)*PH]:null}
@@ -522,7 +536,7 @@ const TX=[
 // ---------- الداتا ----------
 const NF=VOA.length,NS=14;
 const DEF=[10,11,9,8,7,6,5,3,4,2,1,0,-1,-1]; // الملف المقترح لكل خانة (-1 = صوت آلي)
-const VKEY='aura-vo-map5',TABMAP=[1,3,2,5,9,6]; // تبويبات الـ VR → خانة القسم المقابل
+const VKEY='aura-vo-map5',TABMAP=[1,3,2,5,9,6,11]; // تبويبات الـ VR → خانة القسم المقابل
 let MAP=DEF.slice();try{const s=JSON.parse(localStorage.getItem(VKEY)||'null');if(Array.isArray(s)&&s.length==NS&&s.every(v=>Number.isInteger(v)&&v>=-1&&v<NF))MAP=s}catch(e){}
 const SS=window.speechSynthesis,TTS=!!(SS&&window.SpeechSynthesisUtterance);
 const DS=[...document.querySelectorAll('.pn > details')];
